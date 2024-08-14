@@ -41,33 +41,16 @@ void
 usertrap(void)
 {
   int which_dev = 0;
-
   if((r_sstatus() & SSTATUS_SPP) != 0)
     panic("usertrap: not from user mode");
-
-  // send interrupts and exceptions to kerneltrap(),
-  // since we're now in the kernel.
   w_stvec((uint64)kernelvec);
-
   struct proc *p = myproc();
-  
-  // save user program counter.
   p->trapframe->epc = r_sepc();
-  
   if(r_scause() == 8){
-    // system call
-
     if(p->killed)
       exit(-1);
-
-    // sepc points to the ecall instruction,
-    // but we want to return to the next instruction.
     p->trapframe->epc += 4;
-
-    // an interrupt will change sstatus &c registers,
-    // so don't enable until done with those registers.
     intr_on();
-
     syscall();
   } else if (r_scause() == 12 || r_scause() == 13
              || r_scause() == 15) { // mmap page fault - lab10
@@ -76,10 +59,7 @@ usertrap(void)
     struct vm_area *vma = 0;
     int flags = PTE_U;
     int i;
-    // find the VMA
     for (i = 0; i < NVMA; ++i) {
-      // like the Linux mmap, it can modify the remaining bytes in
-      //the end of mapped page
       if (p->vma[i].addr && va >= p->vma[i].addr
           && va < p->vma[i].addr + p->vma[i].len) {
         vma = &p->vma[i];

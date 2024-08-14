@@ -497,7 +497,6 @@ uint64 sys_mmap(void) {
   struct vm_area *vma = 0;
   struct proc *p = myproc();
   int i;
-
   if (argaddr(0, &addr) < 0 || argint(1, &len) < 0
       || argint(2, &prot) < 0 || argint(3, &flags) < 0
       || argfd(4, 0, &f) < 0 || argint(5, &offset) < 0) {
@@ -514,8 +513,6 @@ uint64 sys_mmap(void) {
   if (len < 0 || offset < 0 || offset % PGSIZE) {
     return -1;
   }
-
-  // allocate a VMA for the mapped memory
   for (i = 0; i < NVMA; ++i) {
     if (!p->vma[i].addr) {
       vma = &p->vma[i];
@@ -525,10 +522,6 @@ uint64 sys_mmap(void) {
   if (!vma) {
     return -1;
   }
-
-  // assume that addr will always be 0, the kernel
-  //choose the page-aligned address at which to create
-  //the mapping
   addr = MMAPMINADDR;
   for (i = 0; i < NVMA; ++i) {
     if (p->vma[i].addr) {
@@ -547,7 +540,6 @@ uint64 sys_mmap(void) {
   vma->offset = offset;
   vma->f = f;
   filedup(f);     // increase the file's reference count
-
   return addr;
 }
 
