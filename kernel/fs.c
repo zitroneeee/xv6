@@ -439,14 +439,12 @@ itrunc(struct inode *ip)
   int i, j, k;  // lab9-1
   struct buf *bp, *bp2;     // lab9-1
   uint *a, *a2; // lab9-1
-
   for(i = 0; i < NDIRECT; i++){
     if(ip->addrs[i]){
       bfree(ip->dev, ip->addrs[i]);
       ip->addrs[i] = 0;
     }
   }
-
   if(ip->addrs[NDIRECT]){
     bp = bread(ip->dev, ip->addrs[NDIRECT]);
     a = (uint*)bp->data;
@@ -458,7 +456,6 @@ itrunc(struct inode *ip)
     bfree(ip->dev, ip->addrs[NDIRECT]);
     ip->addrs[NDIRECT] = 0;
   }
-  // free the doubly-indirect block - lab9-1
   if(ip->addrs[NDIRECT + 1]) {
     bp = bread(ip->dev, ip->addrs[NDIRECT + 1]);
     a = (uint*)bp->data;
@@ -480,7 +477,6 @@ itrunc(struct inode *ip)
     bfree(ip->dev, ip->addrs[NDIRECT + 1]);
     ip->addrs[NDIRECT + 1] = 0;
   }
-
   ip->size = 0;
   iupdate(ip);
 }
