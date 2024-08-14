@@ -94,7 +94,6 @@ static struct proc*
 allocproc(void)
 {
   struct proc *p;
-
   for(p = proc; p < &proc[NPROC]; p++) {
     acquire(&p->lock);
     if(p->state == UNUSED) {
@@ -104,16 +103,12 @@ allocproc(void)
     }
   }
   return 0;
-
 found:
   p->pid = allocpid();
-
-  // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
     release(&p->lock);
     return 0;
   }
-
   // An empty user page table.
   p->pagetable = proc_pagetable(p);
   if(p->pagetable == 0){
@@ -121,7 +116,6 @@ found:
     release(&p->lock);
     return 0;
   }
-
   // process's kernel page table - lab3-2
   p->kpagetable = proc_kpagetable(p);
   if (p->kpagetable == 0) {
@@ -342,20 +336,15 @@ fork(void)
   int i, pid;
   struct proc *np;
   struct proc *p = myproc();
-
-  // Allocate process.
   if((np = allocproc()) == 0){
     return -1;
   }
-
-  // Copy user memory from parent to child.
   if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
     freeproc(np);
     release(&np->lock);
     return -1;
   }
   np->sz = p->sz;
-  // copy user page table to kernel page table - lab3-3
   if(u2kvmcopy(np->pagetable, np->kpagetable, 0, np->sz) < 0) {
     freeproc(np);
     release(&np->lock);
@@ -363,11 +352,7 @@ fork(void)
   }
 
   np->parent = p;
-
-  // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
-
-  // Cause fork to return 0 in the child.
   np->trapframe->a0 = 0;
 
   // increment reference counts on open file descriptors.
