@@ -82,8 +82,6 @@ bget(uint dev, uint blockno)
   struct buf *pre, *minb = 0, *minpre;
   uint mintimestamp;
   int i;
-
-  // loop up the buf in the buckets[idx]
   acquire(&bcache.locks[idx]);  // lab8-2
   for(b = bcache.buckets[idx].next; b; b = b->next){
     if(b->dev == dev && b->blockno == blockno){
@@ -93,9 +91,6 @@ bget(uint dev, uint blockno)
       return b;
     }
   }
-
-  // Not cached.
-  // check if there is a buf not used -lab8-2
   acquire(&bcache.lock);
   if(bcache.size < NBUF) {
     b = &bcache.buf[bcache.size++];
@@ -112,9 +107,6 @@ bget(uint dev, uint blockno)
   }
   release(&bcache.lock);
   release(&bcache.locks[idx]);
-
-  // select the last-recently used block int the bucket
-  //based on the timestamp - lab8-2
   acquire(&bcache.hashlock);
   for(i = 0; i < NBUCKET; ++i) {
       mintimestamp = -1;
@@ -134,13 +126,11 @@ bget(uint dev, uint blockno)
               mintimestamp = b->timestamp;
           }
       }
-      // find an unused block
       if(minb) {
           minb->dev = dev;
           minb->blockno = blockno;
           minb->valid = 0;
           minb->refcnt = 1;
-          // if block in another bucket, we should move it to correct bucket
           if(idx != HASH(blockno)) {
               minpre->next = minb->next;    // remove block
               release(&bcache.locks[idx]);
@@ -159,19 +149,6 @@ bget(uint dev, uint blockno)
           idx = 0;
       }
   }
-// lab8-2
-//  // Recycle the least recently used (LRU) unused buffer.
-//  for(b = bcache.head.prev; b != &bcache.head; b = b->prev){
-//    if(b->refcnt == 0) {
-//      b->dev = dev;
-//      b->blockno = blockno;
-//      b->valid = 0;
-//      b->refcnt = 1;
-//      release(&bcache.lock);
-//      acquiresleep(&b->lock);
-//      return b;
-//    }
-//  }
   panic("bget: no buffers");
 }
 
